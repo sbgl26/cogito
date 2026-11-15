@@ -69,7 +69,17 @@
 :root[data-hand='0'] { --write: var(--sans); }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* Comportement d'app native : ni zoom au double appui, ni pincement, ni rebond de page,
+   ni sélection de texte, ni menu d'appui long. Seul le défilement reste permis ;
+   les plateaux qui gèrent eux-mêmes le doigt repassent à « none » plus bas. */
+* { touch-action: manipulation; touch-action: pan-x pan-y; }
+html {
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+a, img, svg { -webkit-user-drag: none; user-drag: none; }
 body {
   --tint: #FFE14D;
   --hl: var(--tint);
@@ -82,7 +92,7 @@ body {
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
   -webkit-touch-callout: none;
   user-select: none; -webkit-user-select: none;
 }
@@ -92,8 +102,8 @@ body {
     --hl-soft: color-mix(in srgb, var(--tint) var(--mix-soft), var(--mix));
   }
 }
-button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
-a { color: inherit; text-decoration: none; touch-action: manipulation; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
 h1, h2, p, dl, dd { margin: 0; }
 :focus-visible { outline: 3px solid var(--pen); outline-offset: 2px; }
 .icon { display: inline-grid; place-items: center; }
@@ -338,7 +348,8 @@ h1, h2, p, dl, dd { margin: 0; }
 
 /* ---------- Zone de jeu ---------- */
 
-.page--game { display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 540px; }
+/* Écran de jeu figé : rien ne défile, donc rien ne rebondit sous le doigt. */
+.page--game { position: fixed; inset: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .game-host { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .play { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 4px 12px 10px; gap: 10px; }
 .stage { flex: 1; min-height: 0; display: grid; place-items: center; position: relative; }

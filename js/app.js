@@ -28,6 +28,12 @@ function render() {
   document.title = def ? def.title + ' – Cogito' : 'Cogito';
 }
 
+// Gestes « page web » neutralisés pour un ressenti d'app native : pincement (iOS),
+// zoom au double clic, menu contextuel de l'appui long, glisser d'images ou de liens.
+for (const type of ['gesturestart', 'gesturechange', 'gestureend', 'dblclick', 'contextmenu', 'dragstart']) {
+  document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+}
+
 applyAppearance();
 if (window.matchMedia) {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyAppearance);

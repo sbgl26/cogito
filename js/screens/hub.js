@@ -4,7 +4,7 @@ import { h, icon, fmtTime, sheet, toast } from '../core/ui.js';
 import { saves, stats, settings, daily } from '../core/store.js';
 import { GAMES, dailyPick } from '../games/registry.js';
 
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.2.1';
 
 function tabbar(active) {
   const tab = (name, href, icn, label) => h('a', {
