@@ -1,6 +1,6 @@
 // Service worker : met toute l'app en cache pour qu'elle fonctionne hors connexion.
 // À CHAQUE MISE EN LIGNE : changer VERSION, sinon les téléphones gardent l'ancienne.
-const VERSION = 'cogito-0.2.1';
+const VERSION = 'cogito-0.3.0';
 
 const FILES = [
   './',
@@ -30,6 +30,7 @@ const FILES = [
   'js/games/nonogram/engine.js',
   'js/games/nonogram/game.js',
   'js/games/registry.js',
+  'js/games/scierie/game.js',
   'js/games/solitaire/engine.js',
   'js/games/solitaire/game.js',
   'js/games/spider/game.js',
@@ -37,11 +38,15 @@ const FILES = [
   'js/games/sudoku/game.js',
   'js/games/sums/engine.js',
   'js/games/sums/game.js',
+  'js/games/sushi/game.js',
   'js/games/tri/engine.js',
   'js/games/tri/game.js',
+  'js/idle/hud.js',
+  'js/idle/kit.js',
   'js/screens/game.js',
   'js/screens/hub.js',
   'manifest.webmanifest',
+  'vendor/three.module.min.js',
 ];
 
 self.addEventListener('install', (event) => {

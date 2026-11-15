@@ -22,6 +22,8 @@ const TABLE = {
   blocs: () => ({}),
   g2048: () => ({}),
   mines: () => ({}),
+  scierie: () => ({}),
+  sushi: () => ({}),
 };
 
 export function runGenerator(game, level, seedValue = null) {

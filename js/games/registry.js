@@ -14,6 +14,8 @@ import { solitaireDef } from './solitaire/game.js';
 import { g2048Def } from './g2048/game.js';
 import { minesDef } from './mines/game.js';
 import { spiderDef } from './spider/game.js';
+import { scierieDef } from './scierie/game.js';
+import { sushiDef } from './sushi/game.js';
 
 // ----- Vignettes (SVG 96 × 64). Couleurs fixes : la vignette est un autocollant,
 // identique en thème clair et sombre. -----
@@ -62,13 +64,21 @@ MOTIFS.mines = svg(sheet() + lines(3, LINE) + text(33.500, 22, '1', 12, PEN) + t
 MOTIFS.spider = svg([0, 1, 2, 3].map((k) => `<rect x="${17 + k * 16}" y="${9 + k * 3}" width="15" height="22" rx="2.5" fill="${PEN}" stroke="${INK}" stroke-width="1.6"/>`).join('') +
   [['R', 17], ['D', 33], ['V', 49], ['10', 65]].map(([t, x], k) => `<rect x="${x}" y="${24 + k * 3}" width="15" height="22" rx="2.5" fill="${WHITE}" stroke="${INK}" stroke-width="1.6"/>` + text(x + 7.5, 39 + k * 3, t, t.length > 1 ? 8.5 : 10, INK)).join(''));
 
+const coin = (x, y, r = 7) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#FFD43B" stroke="${INK}" stroke-width="1.8"/><circle cx="${x}" cy="${y}" r="${r * 0.45}" fill="none" stroke="#F59F00" stroke-width="1.6"/>`;
+MOTIFS.scierie = svg(`<rect x="44" y="34" width="5" height="16" rx="1.5" fill="#8A5A3C" stroke="${INK}" stroke-width="1.6"/>` +
+  `<circle cx="46" cy="27" r="13" fill="#2F9E44" stroke="${INK}" stroke-width="1.8"/><circle cx="56" cy="18" r="8.5" fill="#40C057" stroke="${INK}" stroke-width="1.8"/><circle cx="37" cy="19" r="7" fill="#2B8A3E" stroke="${INK}" stroke-width="1.8"/>` +
+  `<rect x="14" y="44" width="24" height="8" rx="4" fill="#C98B4A" stroke="${INK}" stroke-width="1.8"/><circle cx="34" cy="48" r="2" fill="${INK}"/>` + coin(72, 44));
+MOTIFS.sushi = svg(`<ellipse cx="42" cy="40" rx="27" ry="11" fill="${WHITE}" stroke="${INK}" stroke-width="2"/><ellipse cx="42" cy="38.5" rx="20" ry="7" fill="none" stroke="${LINE}" stroke-width="1.4"/>` +
+  `<rect x="24" y="24" width="17" height="12" rx="4" fill="${WHITE}" stroke="${INK}" stroke-width="1.8"/><rect x="23" y="19" width="19" height="8" rx="4" fill="#FF922B" stroke="${INK}" stroke-width="1.8"/>` +
+  `<rect x="45" y="24" width="17" height="12" rx="4" fill="${WHITE}" stroke="${INK}" stroke-width="1.8"/><rect x="44" y="19" width="19" height="8" rx="4" fill="#FA5252" stroke="${INK}" stroke-width="1.8"/>` + coin(78, 22, 6.5));
+
 // Une couleur de surligneur par jeu.
 const COLORS = {
   sudoku: '#FFE14D', killer: '#FFB65C', nonogram: '#9AD0FF', nonocolor: '#FFA3C7', blocs: '#9BE5A8',
-  match: '#CDB8FF', sums: '#84E3D8', tri: '#FFA08F', solitaire: '#D2EC6F', g2048: '#FFC971', mines: '#B9C2D6', spider: '#F3A6E8',
+  match: '#CDB8FF', sums: '#84E3D8', tri: '#FFA08F', solitaire: '#D2EC6F', g2048: '#FFC971', mines: '#B9C2D6', spider: '#F3A6E8', scierie: '#8EDB7E', sushi: '#FFD8A8',
 };
 
-export const GAMES = [sudokuDef, killerDef, nonogramDef, nonocolorDef, blocsDef, solitaireDef, spiderDef, g2048Def, matchDef, sumsDef, triDef, minesDef]
+export const GAMES = [sudokuDef, killerDef, nonogramDef, nonocolorDef, blocsDef, solitaireDef, spiderDef, g2048Def, matchDef, sumsDef, triDef, minesDef, scierieDef, sushiDef]
   .map((def) => ({ ...def, motif: MOTIFS[def.id], color: COLORS[def.id] }));
 
 export const byId = (id) => GAMES.find((g) => g.id === id);

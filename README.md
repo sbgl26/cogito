@@ -1,7 +1,7 @@
 # Cogito — carnet de jeux de logique (PWA)
 
 Une seule app, jouable hors connexion, sans dépendance ni étape de build
-(HTML + CSS + modules JavaScript natifs). Douze jeux :
+(HTML + CSS + modules JavaScript natifs). Douze jeux de logique et deux jeux de gestion :
 
 | Jeu | Niveaux | Particularités |
 | --- | --- | --- |
@@ -17,6 +17,10 @@ Une seule app, jouable hors connexion, sans dépendance ni étape de build
 | Sommes | 5×5 à 8×8 | totaux par ligne et colonne, solution unique |
 | Tri de couleurs | 5 à 12 couleurs | départs toujours solubles |
 | Démineur | 3 tailles | premier coup sûr, appui long = drapeau |
+
+Jeux de gestion (3D, sans fin, revenus même app fermée) : **Scierie** et **Sushi express**.
+Ils partagent `js/idle/kit.js` (scène Three.js, formes à facettes) et `js/idle/hud.js`
+(caisse, améliorations, revenus pendant l'absence). Three.js est embarqué dans `vendor/`.
 
 Autour des jeux : défi du jour (même grille pour tout le monde, série de jours),
 statistiques, reprise automatique, thème clair / sombre, sons et vibrations.
@@ -81,4 +85,5 @@ L'objet `api` donne `persist()`, `error()`, `win(el)`, `over(el)` (jeux à score
 
 Tout est stocké sur l'appareil (localStorage) : aucun compte, aucun serveur, aucun traceur.
 Polices embarquées : Bricolage Grotesque et Patrick Hand, sous licence SIL Open Font License.
+Three.js (vendor/) est sous licence MIT.
 Grilles, visuels et code sont originaux ; aucun contenu d'un éditeur tiers n'est repris.

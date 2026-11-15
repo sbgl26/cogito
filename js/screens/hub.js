@@ -3,8 +3,9 @@
 import { h, icon, fmtTime, sheet, toast } from '../core/ui.js';
 import { saves, stats, settings, daily } from '../core/store.js';
 import { GAMES, dailyPick } from '../games/registry.js';
+import { fmt } from '../idle/hud.js';
 
-export const APP_VERSION = '0.2.1';
+export const APP_VERSION = '0.3.0';
 
 function tabbar(active) {
   const tab = (name, href, icn, label) => h('a', {
@@ -38,10 +39,11 @@ export function home(root) {
       h('span', { class: 'daily-streak' }, streak),
       h('span', { class: 'daily-unit' }, streak > 1 ? 'jours de suite' : 'jour de suite')));
 
-  const tiles = GAMES.map((g) => {
+  const tile = (g) => {
     const save = saves.load(g.id);
     const playing = save && !save.done && save.v === 2;
     const status = !playing ? g.tagline
+      : g.mode === 'idle' ? `${fmt(save.cash)} pièces en caisse`
       : g.mode === 'score' ? `Reprendre, ${plural(save.score || 0, 'point')}`
         : ['Reprendre', levelName(g, save.level).split(',')[0], fmtTime(save.elapsed)].filter(Boolean).join(', ');
     return h('a', { class: 'tile', href: '#' + g.id, style: `--c:${g.color}` },
@@ -49,14 +51,18 @@ export function home(root) {
       h('span', { class: 'tile-body' },
         h('span', { class: 'tile-name' }, g.title),
         h('span', { class: 'tile-status' + (playing ? ' is-live' : '') }, status)));
-  });
+  };
+  const logic = GAMES.filter((g) => g.mode !== 'idle'), tycoons = GAMES.filter((g) => g.mode === 'idle');
 
   root.append(h('div', { class: 'page page--cahier page--hub' },
     h('header', { class: 'masthead' },
       h('h1', null, h('span', { class: 'marker' }, 'Cogito')),
-      h('p', null, `${GAMES.length} jeux de logique, même sans réseau`)),
+      h('p', null, `${GAMES.length} jeux, même sans réseau`)),
     banner,
-    h('nav', { class: 'tiles', 'aria-label': 'Jeux' }, tiles),
+    h('nav', { class: 'tiles', 'aria-label': 'Jeux de logique' }, logic.map(tile)),
+    h('h2', { class: 'section-title' }, h('span', { class: 'marker' }, 'Gestion')),
+    h('p', { class: 'section-note' }, 'Ça tourne tout seul, même app fermée.'),
+    h('nav', { class: 'tiles', 'aria-label': 'Jeux de gestion' }, tycoons.map(tile)),
     tabbar('jeux')));
 }
 
@@ -67,7 +73,7 @@ export function statsScreen(root) {
   const any = Object.keys(all).length > 0;
   const head = (...cols) => h('thead', null, h('tr', null, cols.map((c) => h('th', { scope: 'col' }, c))));
   let finished = 0;
-  const sections = GAMES.filter((g) => all[g.id]).map((g) => {
+  const sections = GAMES.filter((g) => all[g.id] && g.mode !== 'idle').map((g) => {
     const levels = g.levels || { std: 'Partie' };
     const lines = Object.entries(levels).map(([key, label]) => {
       const s = stats.of(g.id, key);

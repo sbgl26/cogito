@@ -15,6 +15,7 @@ export function mountGame(root, def, opts = {}) {
   const levels = def.levels || { std: 'Partie' };
   const single = !def.levels;
   const scoreMode = def.mode === 'score';
+  const idle = def.mode === 'idle'; // jeu de gestion sans fin : ni niveaux, ni chrono, ni fin de partie
   const home = () => { location.hash = ''; };
 
   let state = saves.load(slot);
@@ -83,7 +84,7 @@ export function mountGame(root, def, opts = {}) {
     if (destroyed) return;
     state = { v: 2, level, elapsed: 0, errors: 0, hints: 0, done: false, ...def.init(data, level) };
     if (run) Object.assign(state, { date: run.date, game: def.id });
-    stats.start(def.id, level);
+    if (!idle) stats.start(def.id, level);
     persist();
     play();
   }
@@ -91,7 +92,7 @@ export function mountGame(root, def, opts = {}) {
   // ----- Partie en cours -----
   function play() {
     teardownPlay();
-    page.className = 'page page--game';
+    page.className = 'page page--game' + (idle ? ' page--idle' : '');
     const main = h('span', { class: 'clock' });
     const sub = h('span', { class: 'errs' });
     const host = h('main', { class: 'game-host' });
@@ -100,13 +101,14 @@ export function mountGame(root, def, opts = {}) {
       h('header', { class: 'topbar' },
         backLink(),
         h('div', { class: 'topbar-title' }, h('strong', null, def.title), label && h('span', null, label)),
-        h('div', { class: 'topbar-meta' }, sub, main),
+        !idle && h('div', { class: 'topbar-meta' }, sub, main),
         h('button', { type: 'button', class: 'iconbtn', 'aria-label': 'Menu de la partie', onclick: menu }, icon('more')),
       ),
       host,
     );
     const record = stats.of(def.id, state.level).best || 0;
     refreshMeta = () => {
+      if (idle) return;
       if (scoreMode) {
         main.textContent = state.score || 0;
         sub.textContent = 'Record ' + Math.max(record, state.score || 0);
@@ -121,7 +123,7 @@ export function mountGame(root, def, opts = {}) {
     };
     ctl = def.mount(host, state, api);
     refreshMeta();
-    if (!scoreMode) {
+    if (!scoreMode && !idle) {
       let lastSave = state.elapsed;
       timer = new Timer((s) => {
         main.textContent = fmtTime(s);
@@ -212,6 +214,26 @@ export function mountGame(root, def, opts = {}) {
 
   // ----- Menu de la partie -----
   function menu() {
+    if (idle) {
+      sheet({
+        title: def.title,
+        actions: [
+          { label: 'Règles du jeu', kind: 'primary', onClick: showRules },
+          {
+            label: 'Repartir de zéro',
+            onClick: () => sheet({
+              title: 'Tout effacer ?',
+              content: h('p', { class: 'sheet-note' }, 'Vos pièces et toutes vos améliorations seront perdues.'),
+              actions: [
+                { label: 'Repartir de zéro', kind: 'danger', onClick: () => { teardownPlay(); saves.clear(slot); state = null; begin('std'); } },
+                { label: 'Annuler', kind: 'quiet' },
+              ],
+            }),
+          },
+        ],
+      });
+      return;
+    }
     const restart = def.reset && {
       label: 'Recommencer cette grille',
       onClick: () => {
@@ -262,6 +284,7 @@ export function mountGame(root, def, opts = {}) {
         h('p', { class: 'start-rule' }, `${def.title} terminé en ${fmtTime(doneToday.seconds)}. Série en cours : ${daily.streak()} jour${daily.streak() > 1 ? 's' : ''}. Un nouveau défi arrive demain.`),
         h('a', { class: 'btn btn--primary', href: '#' }, 'Retour aux jeux')));
   } else if (run) begin(run.level);
+  else if (idle) begin('std');
   else startView();
 
   return {
