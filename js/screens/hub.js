@@ -5,7 +5,7 @@ import { saves, stats, settings, daily } from '../core/store.js';
 import { GAMES, dailyPick } from '../games/registry.js';
 import { fmt } from '../idle/hud.js';
 
-export const APP_VERSION = '0.3.0';
+export const APP_VERSION = '0.3.1';
 
 function tabbar(active) {
   const tab = (name, href, icn, label) => h('a', {

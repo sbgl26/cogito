@@ -2,12 +2,13 @@
 // Jeu de gestion sans fin : chaque tronc livré rapporte des pièces à réinvestir.
 
 import { h } from '../../core/ui.js';
-import { createStage, box, cyl, ball, tree, person, group, at } from '../../idle/kit.js';
+import { createStage, patchyTexture, noise, group, at, turn, mesh, cyl, ball, rbox, disc, blob, tree, pine, rock, flower, person } from '../../idle/kit.js';
 import { createIdle } from '../../idle/hud.js';
+import { ICONS } from '../../idle/icons.js';
 
 const WALK = 2.9, CHOP = 1.5, REGROW = 9; // unités/s, secondes, secondes
-const MILL = { x: 0, z: -6.6 };           // point de livraison, devant la porte
-const COLORS = ['#FF6B6B', '#FFD43B', '#4DABF7', '#F783AC', '#63E6BE', '#FFA94D', '#B197FC'];
+const MILL = { x: 0, z: -6.4 };           // point de livraison, devant la porte
+const SHIRTS = ['#FF6B6B', '#4DABF7', '#FFA94D', '#F783AC', '#63E6BE', '#B197FC', '#FFD43B'];
 
 const workers = (s) => 1 + s.lv.workers;
 const speed = (s) => 1 + 0.15 * s.lv.speed;
@@ -15,10 +16,10 @@ const worth = (s) => Math.round(5 * Math.pow(1.4, s.lv.value));
 const trees = (s) => 6 + 2 * s.lv.forest;
 
 const UPGRADES = [
-  { key: 'workers', label: 'Bûcheron', icon: '🪓', base: 15, growth: 1.75, max: 11, hint: (s) => `${workers(s)} au travail` },
-  { key: 'speed', label: 'Vitesse', icon: '⚡', base: 25, growth: 1.6, max: 20, hint: (s) => `× ${speed(s).toFixed(2).replace('.', ',')}` },
-  { key: 'value', label: 'Scie', icon: '🪚', base: 60, growth: 1.8, max: 40, hint: (s) => `${worth(s)} par tronc` },
-  { key: 'forest', label: 'Forêt', icon: '🌲', base: 40, growth: 1.7, max: 11, hint: (s) => `${trees(s)} arbres` },
+  { key: 'workers', label: 'Bûcheron', icon: ICONS.hache, base: 15, growth: 1.75, max: 11, hint: (s) => `${workers(s)} au travail` },
+  { key: 'speed', label: 'Vitesse', icon: ICONS.eclair, base: 25, growth: 1.6, max: 20, hint: (s) => `× ${speed(s).toFixed(2).replace('.', ',')}` },
+  { key: 'value', label: 'Scie', icon: ICONS.scie, base: 60, growth: 1.8, max: 40, hint: (s) => `${worth(s)} par tronc` },
+  { key: 'forest', label: 'Forêt', icon: ICONS.arbre, base: 40, growth: 1.7, max: 11, hint: (s) => `${trees(s)} arbres` },
 ];
 
 // Revenu moyen par seconde : limité par les bras ou par la repousse des arbres.
@@ -27,15 +28,17 @@ function income(s) {
   return Math.min(workers(s) / cycle, trees(s) / (REGROW + CHOP)) * worth(s);
 }
 
-// Emplacements d'arbres, fixes d'une partie à l'autre (pseudo-hasard par index) :
-// des rangées en quinconce qui s'éloignent de la scierie.
-const noise = (i, k) => ((Math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
+// Emplacements d'arbres : des rangées en quinconce qui s'éloignent de la scierie.
 const SLOTS = Array.from({ length: 30 }, (_, i) => {
   const col = i % 5, row = (i / 5) | 0;
-  return { x: -5.4 + col * 2.7 + (row % 2 ? 0.9 : -0.3) + (noise(i, 1) - 0.5) * 0.8, z: -3.4 + row * 2.3 + (noise(i, 2) - 0.5) * 0.7 };
+  return { x: -5.2 + col * 2.6 + (row % 2 ? 0.9 : -0.3) + (noise(i, 1) - 0.5) * 0.8, z: -2.9 + row * 2.25 + (noise(i, 2) - 0.5) * 0.7 };
 });
-// Arbres de décor, hors de portée, pour habiller les bords.
-const DECOR = [[-7.6, -12.5], [-5.2, -14], [5.6, -13.6], [7.8, -11.8], [-8.2, -8.4], [8.3, -7.6], [-8.6, -2.5], [8.7, -1.2], [-8.8, 3.4], [8.9, 4.6], [-8.5, 9.2], [8.6, 10], [2.2, -14.6], [-1.8, -15.2]];
+// Ordre de plantation : la forêt s'étoffe sur toute la clairière, en commençant près de la scierie.
+const ORDER = [...SLOTS.keys()].sort((a, b) => noise(a, 11) - noise(b, 11));
+ORDER.unshift(...ORDER.splice(ORDER.indexOf(2), 1), ...ORDER.splice(ORDER.indexOf(6), 1));
+// Arbres de décor, hors de portée, pour habiller les bords ([x, z, sapin ?]).
+const DECOR = [[-7.4, -12.6, 1], [-4.6, -14.2, 0], [4.9, -13.8, 1], [7.6, -12, 0], [-9.6, -9.4, 0], [9.3, -8.6, 1], [-8.4, -4.2, 1], [8.5, -3.1, 0],
+  [-8.3, 1.6, 0], [8.4, 2.8, 1], [-8.1, 7.4, 1], [8.2, 8.2, 0], [1.6, -15.4, 0], [-1.9, -16, 1], [11.4, -13.2, 0], [-11.6, -13.6, 1], [-11, -5, 0], [11, -4.4, 1]];
 
 function init() {
   return { cash: 0, total: 0, lv: { workers: 0, speed: 0, value: 0, forest: 0 }, seen: Date.now() };
@@ -47,69 +50,98 @@ function mount(host, state, api) {
   host.append(wrap);
 
   (async () => {
-    stage = await createStage(wrap, { ground: '#9CCB4A', span: 15, lookZ: 0.4 });
+    stage = await createStage(wrap, {
+      ground: '#8CC63F', span: 15, lookZ: 0.7, repeat: 4,
+      floor: () => patchyTexture('#8CC63F', ['rgba(255,255,255,0.13)', 'rgba(40,120,20,0.16)', 'rgba(214,236,90,0.16)', 'rgba(60,140,30,0.12)']),
+    });
     if (dead) { if (stage) stage.dispose(); return; }
     if (!stage) { wrap.append(h('p', { class: 'idle-fail' }, 'Ce jeu a besoin de la 3D, indisponible sur cet appareil.')); return; }
-    const { scene } = stage;
+    const { scene, T } = stage;
+    const add = (obj, x, y, z) => { scene.add(at(obj, x, y, z)); return obj; };
 
-    // ----- Décor : scierie (porte face à la forêt), tas de troncs, fleurs, arbres de bordure -----
-    const blade = cyl(0.8, 0.8, 0.1, '#CED4DA', 14);
-    blade.rotation.x = Math.PI / 2;
-    // Toit à deux pans : deux planches inclinées qui se rejoignent au faîte.
-    const pan = (side) => { const p = box(5.0, 0.28, 2.1, side > 0 ? '#E8590C' : '#C2410C'); p.rotation.x = side * 0.62; return at(p, 0, 2.62, side * 0.82); };
-    scene.add(at(group(
-      at(box(4.4, 2.0, 2.6, '#F0B36B'), 0, 1.0, 0),
-      pan(1), pan(-1),
-      at(box(4.4, 0.9, 1.2, '#F0B36B'), 0, 2.3, 0),
-      at(box(1.1, 1.4, 0.14, '#7A4A2A'), 0, 0.7, 1.32),
-      at(box(1.4, 0.16, 0.2, '#5C3A21'), 0, 1.5, 1.34),
-      at(blade, -1.5, 1.2, 1.36),
-      at(box(0.7, 0.7, 0.1, '#FFE8A3'), 1.5, 1.25, 1.33),
-      at(box(0.55, 1.2, 0.55, '#8A5A3C'), 1.5, 3.3, -0.5)), MILL.x, 0, MILL.z - 1.75));
-    for (let k = 0; k < 6; k++) {
-      const log = cyl(0.26, 0.26, 1.6, '#A8703F', 8);
-      log.rotation.z = Math.PI / 2;
-      const layer = k < 3 ? 0 : 1;
-      scene.add(at(log, 3.6, 0.26 + layer * 0.46, MILL.z - 1.4 + (k % 3) * 0.54 + layer * 0.27));
-    }
-    scene.add(at(box(1.7, 0.04, 2.0, '#D8C38A'), MILL.x, 0.02, MILL.z + 0.5));
-    for (let k = 0; k < 22; k++) {
-      scene.add(at(ball(0.11, k % 2 ? '#FFFFFF' : '#FFE066', 0), -7 + noise(k, 3) * 14, 0.08, -9 + noise(k, 4) * 20));
-    }
-    for (let k = 0; k < 9; k++) {
-      const patch = cyl(1.2 + noise(k, 5), 1.2 + noise(k, 5), 0.02, '#8FC043', 9);
-      scene.add(at(patch, -7 + noise(k, 6) * 14, 0.01, -10 + noise(k, 7) * 21));
-    }
-    DECOR.forEach(([x, z], k) => {
-      const g = tree();
-      g.scale.setScalar(1.05 + noise(k, 8) * 0.5);
-      g.rotation.y = k * 2.1;
-      scene.add(at(g, x, 0, z));
+    // ----- La scierie : dalle, murs en bois, toit à deux pans, porte face à la forêt -----
+    // Le pignon fait face à la caméra : on lit tout de suite une maison.
+    const prism = (half, height, depth, bevel) => {
+      const s = new T.Shape();
+      s.moveTo(-half, 0); s.lineTo(half, 0); s.lineTo(0, height); s.closePath();
+      const g = new T.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2 });
+      g.translate(0, 0, -depth / 2);
+      return g;
+    };
+    const lying = (m) => turn(m, Math.PI / 2, 0, 0);
+    add(group(
+      at(rbox(5.9, 0.4, 4.0, '#C9CED6', 0.14), 0, 0.2, 0),
+      at(rbox(4.9, 2.3, 3.1, '#F4C27A', 0.14), 0, 1.55, 0),
+      at(rbox(4.94, 0.07, 0.06, '#DDA45C', 0.02), 0, 1.0, 1.55), at(rbox(4.94, 0.07, 0.06, '#DDA45C', 0.02), 0, 1.6, 1.55), at(rbox(4.94, 0.07, 0.06, '#DDA45C', 0.02), 0, 2.2, 1.55),
+      at(mesh(prism(2.95, 2.0, 3.5, 0.1), '#F2553D', { rough: 0.7 }), 0, 2.62, 0),
+      at(mesh(prism(2.3, 1.56, 3.76, 0.02), '#F4C27A'), 0, 2.66, 0),
+      at(rbox(0.3, 0.3, 3.9, '#C9402B', 0.1), 0, 4.62, 0),
+      at(lying(cyl(0.3, 0.3, 0.1, '#FFE9BC', 20)), 0, 3.35, 1.9),
+      at(rbox(1.6, 1.95, 0.12, '#FFE9BC', 0.08), 0, 1.38, 1.52),
+      at(rbox(1.25, 1.7, 0.16, '#8D5A3B', 0.08), 0, 1.28, 1.56),
+      at(ball(0.08, '#FFD43B', { rough: 0.4 }), 0.38, 1.25, 1.66),
+      at(lying(cyl(0.55, 0.55, 0.1, '#DDA45C', 28)), 1.65, 1.85, 1.53),
+      at(lying(cyl(0.42, 0.42, 0.12, '#FFF3BF', 28, { rough: 0.3 })), 1.65, 1.85, 1.55),
+      at(rbox(0.7, 1.7, 0.7, '#C9583F', 0.08), 1.75, 3.7, -0.8),
+      at(rbox(0.9, 0.22, 0.9, '#93402D', 0.06), 1.75, 4.6, -0.8)), MILL.x, 0, MILL.z - 2.2);
+
+    // Établi de sciage : une grande lame qui tourne.
+    const blade = cyl(0.78, 0.78, 0.07, '#DDE2E8', 14, { flat: true, metal: 0.55, rough: 0.35 });
+    blade.rotation.z = Math.PI / 2;
+    const spin = group(blade, turn(cyl(0.18, 0.18, 0.12, '#495057', 12), 0, 0, Math.PI / 2));
+    add(group(at(rbox(2.0, 0.8, 1.35, '#E0A060', 0.1), 0, 0.4, 0), at(rbox(2.1, 0.12, 1.45, '#C98B4A', 0.05), 0, 0.84, 0), at(spin, 0, 1.0, 0)), -4.1, 0, MILL.z - 1.3);
+
+    // Tas de troncs, avec leurs bouts clairs.
+    const logMesh = (len, r = 0.27) => turn(group(cyl(r, r, len, '#8D5A3B', 12), cyl(r * 0.76, r * 0.76, len + 0.02, '#EBCB9E', 12)), 0, 0, Math.PI / 2);
+    [[0, 0], [0.56, 0], [1.12, 0], [0.28, 0.47], [0.84, 0.47], [0.56, 0.94]].forEach(([dz, dy], k) => {
+      add(logMesh(1.9 - (k % 2) * 0.15), 4.2, 0.27 + dy, MILL.z - 2.2 + dz);
     });
 
-    // ----- Arbres -----
+    // Chemin, mare, rochers, buissons, fleurs, arbres de bordure.
+    add(disc(1.25, 2.3, '#E3CE96'), MILL.x, 0.014, MILL.z + 1.1);
+    add(disc(0.8, 0.6, '#E3CE96'), MILL.x + 0.5, 0.014, MILL.z + 3.3);
+    add(disc(2.3, 1.55, '#D9E7A8'), -6.3, 0.014, -10.2);
+    add(disc(2.0, 1.3, '#4DABF7', 0.02, { rough: 0.15 }), -6.3, 0.016, -10.2);
+    add(disc(0.9, 0.5, '#8BCBFA', 0.03, { rough: 0.15 }), -6.7, 0.02, -10.5);
+    add(rock(0.5, 2), -4.4, 0.2, -9.4); add(rock(0.34, 3), -7.9, 0.14, -8.9); add(rock(0.45, 5), 6.6, 0.18, -5.6); add(rock(0.3, 7), -6.6, 0.12, 4.4);
+    for (let k = 0; k < 9; k++) {
+      const bush = group(at(blob(0.42, '#40C057', k), 0, 0.3, 0), at(blob(0.3, '#51CF66', k + 2), 0.34, 0.24, 0.1));
+      add(bush, (k % 2 ? 1 : -1) * (6.6 + noise(k, 4) * 0.9), 0, -7 + k * 1.9);
+    }
+    const petals = ['#FFFFFF', '#FF8FA3', '#FFE066', '#D0BFFF'];
+    for (let k = 0; k < 26; k++) add(flower(petals[k % 4]), -6.4 + noise(k, 3) * 12.8, 0, -9.5 + noise(k, 5) * 19);
+    DECOR.forEach(([x, z, isPine], k) => {
+      const g = isPine ? pine(k) : tree(k);
+      g.scale.setScalar(1.05 + noise(k, 8) * 0.45);
+      g.rotation.y = k * 2.1;
+      add(g, x, 0, z);
+    });
+
+    // ----- Arbres à couper -----
     const forest = [];
     function syncTrees() {
       while (forest.length < Math.min(trees(state), SLOTS.length)) {
-        const p = SLOTS[forest.length];
-        const g = tree();
+        const p = SLOTS[ORDER[forest.length]];
+        const g = tree(forest.length + 2);
         g.rotation.y = forest.length * 1.7;
-        scene.add(at(g, p.x, 0, p.z));
-        forest.push({ g, x: p.x, z: p.z, grow: 1, taken: false });
+        add(g, p.x, 0, p.z);
+        forest.push({ g, x: p.x, z: p.z, grow: 1, shown: 1, taken: false });
       }
     }
 
-    // ----- Bûcherons -----
+    // ----- Bûcherons : casque, hache à la main, tronc sur l'épaule au retour -----
     const crew = [];
     function syncCrew() {
       while (crew.length < workers(state)) {
-        const body = person(COLORS[crew.length % COLORS.length]);
-        const log = cyl(0.17, 0.17, 0.95, '#A8703F', 7);
-        log.rotation.z = Math.PI / 2;
+        const k = crew.length;
+        const body = person({ color: SHIRTS[k % SHIRTS.length], seed: k, hat: 'casque' });
+        const axe = group(at(cyl(0.035, 0.035, 0.62, '#D9965A', 8), 0, 0, 0), at(rbox(0.26, 0.2, 0.07, '#CED4DA', 0.03, { metal: 0.4, rough: 0.4 }), 0.1, 0.24, 0));
+        body.userData.armR.add(at(turn(axe, Math.PI / 2, 0, 0), 0, -0.45, 0.12));
+        const log = logMesh(1.0, 0.16);
         log.visible = false;
-        body.add(at(log, 0, 1.0, 0.1));
-        scene.add(at(body, MILL.x + (crew.length % 4 - 1.5) * 0.8, 0, MILL.z + 0.6));
-        crew.push({ g: body, log, mode: 'seek', target: null, t: 0, phase: crew.length });
+        body.add(at(log, 0, 1.3, 0.06));
+        add(body, MILL.x + (k % 4 - 1.5) * 0.85, 0, MILL.z + 0.7);
+        crew.push({ g: body, log, axe, mode: 'seek', target: null, t: 0, phase: k * 1.7 });
       }
     }
 
@@ -127,12 +159,21 @@ function mount(host, state, api) {
     function update(dt, now) {
       for (const t of forest) {
         if (t.grow < 1) t.grow = Math.min(1, t.grow + dt / REGROW);
-        const s = 0.12 + 0.88 * t.grow;
-        t.g.userData.crown.scale.setScalar(s);
-        t.g.userData.crown.position.y = (1 - s) * 0.6;
+        t.shown += (t.grow - t.shown) * Math.min(1, dt * 9);
+        const s = 0.02 + 0.98 * t.shown;
+        const crown = t.g.userData.crown;
+        crown.scale.setScalar(s);
+        crown.position.y = (1 - s) * 1.1;
       }
       for (const w of crew) {
-        w.g.position.y = w.mode === 'wait' ? 0 : Math.abs(Math.sin(now * 9 + w.phase)) * 0.09;
+        const u = w.g.userData;
+        const moving = w.mode === 'go' || w.mode === 'back';
+        const swing = moving ? Math.sin(now * 11 + w.phase) : 0;
+        w.g.position.y = moving ? Math.abs(swing) * 0.07 : 0;
+        u.legL.rotation.x = -swing * 0.6;
+        u.legR.rotation.x = swing * 0.6;
+        u.armL.rotation.x = w.mode === 'back' ? -2.7 : swing * 0.7;
+        u.armR.rotation.x = -swing * 0.7;
         if (w.mode === 'seek' || w.mode === 'wait') {
           let best = null, bestD = Infinity;
           for (const t of forest) {
@@ -140,32 +181,33 @@ function mount(host, state, api) {
             const d = Math.hypot(t.x - w.g.position.x, t.z - w.g.position.z);
             if (d < bestD) { best = t; bestD = d; }
           }
-          if (best) { best.taken = true; w.target = best; w.mode = 'go'; } else w.mode = 'wait';
+          if (best) { best.taken = true; w.target = best; w.mode = 'go'; } else { w.mode = 'wait'; w.g.rotation.y = 0; }
         } else if (w.mode === 'go') {
-          if (walk(w, w.target.x + 0.8, w.target.z + 0.45, dt)) { w.mode = 'chop'; w.t = 0; }
+          if (walk(w, w.target.x + 0.95, w.target.z + 0.4, dt)) { w.mode = 'chop'; w.t = 0; }
         } else if (w.mode === 'chop') {
           w.t += dt * speed(state);
           w.g.rotation.y = -Math.PI / 2;
-          w.g.rotation.z = Math.sin(w.t * 14) * 0.22;
-          w.target.g.rotation.z = Math.sin(w.t * 14) * 0.05;
+          u.armR.rotation.x = -1.5 + Math.sin(w.t * 13) * 0.95;
+          w.target.g.rotation.z = Math.max(0, Math.sin(w.t * 13)) * 0.05;
           if (w.t >= CHOP) {
-            w.g.rotation.z = 0;
             w.target.g.rotation.z = 0;
             w.target.grow = 0;
             w.target.taken = false;
             w.target = null;
             w.log.visible = true;
+            w.axe.visible = false;
             w.mode = 'back';
           }
         } else if (w.mode === 'back') {
-          if (walk(w, MILL.x + (w.phase % 3 - 1) * 0.45, MILL.z + 0.2, dt)) {
+          if (walk(w, MILL.x + ((w.phase * 3) % 3 - 1) * 0.5, MILL.z + 0.2, dt)) {
             w.log.visible = false;
+            w.axe.visible = true;
             w.mode = 'seek';
-            hud.earn(worth(state), stage.project(w.g.position.x, 2.2, w.g.position.z));
+            hud.earn(worth(state), stage.project(MILL.x, 3.2, MILL.z));
           }
         }
       }
-      blade.rotation.z += dt * 6;
+      spin.rotation.x += dt * 9;
       hud.refresh();
     }
 

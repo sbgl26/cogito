@@ -28,7 +28,7 @@ export function createIdle({ host, state, api, upgrades, income, onBuy }) {
     const level = h('span', { class: 'up-level' });
     const price = h('span', { class: 'up-price' });
     const btn = h('button', { type: 'button', class: 'up', onclick: () => buy(u) },
-      h('span', { class: 'up-icon' }, u.icon), h('span', { class: 'up-label' }, u.label), level, price);
+      h('span', { class: 'up-icon', html: u.icon }), h('span', { class: 'up-label' }, u.label), level, price);
     return { u, btn, level, price };
   });
   const bar = h('div', { class: 'idle-bar' }, buttons.map((b) => b.btn));

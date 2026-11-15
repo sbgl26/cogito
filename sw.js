@@ -1,6 +1,6 @@
 // Service worker : met toute l'app en cache pour qu'elle fonctionne hors connexion.
 // À CHAQUE MISE EN LIGNE : changer VERSION, sinon les téléphones gardent l'ancienne.
-const VERSION = 'cogito-0.3.0';
+const VERSION = 'cogito-0.3.1';
 
 const FILES = [
   './',
@@ -42,6 +42,7 @@ const FILES = [
   'js/games/tri/engine.js',
   'js/games/tri/game.js',
   'js/idle/hud.js',
+  'js/idle/icons.js',
   'js/idle/kit.js',
   'js/screens/game.js',
   'js/screens/hub.js',
