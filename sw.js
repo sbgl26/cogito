@@ -1,6 +1,6 @@
 // Service worker : met toute l'app en cache pour qu'elle fonctionne hors connexion.
 // À CHAQUE MISE EN LIGNE : changer VERSION, sinon les téléphones gardent l'ancienne.
-const VERSION = 'cogito-0.3.1';
+const VERSION = 'cogito-0.4.0';
 
 const FILES = [
   './',

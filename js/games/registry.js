@@ -75,7 +75,7 @@ MOTIFS.sushi = svg(`<ellipse cx="42" cy="40" rx="27" ry="11" fill="${WHITE}" str
 // Une couleur de surligneur par jeu.
 const COLORS = {
   sudoku: '#FFE14D', killer: '#FFB65C', nonogram: '#9AD0FF', nonocolor: '#FFA3C7', blocs: '#9BE5A8',
-  match: '#CDB8FF', sums: '#84E3D8', tri: '#FFA08F', solitaire: '#D2EC6F', g2048: '#FFC971', mines: '#B9C2D6', spider: '#F3A6E8', scierie: '#8EDB7E', sushi: '#FFD8A8',
+  match: '#CDB8FF', sums: '#84E3D8', tri: '#FFA08F', solitaire: '#D2EC6F', g2048: '#FFC971', mines: '#B9C2D6', spider: '#F3A6E8', scierie: '#8EDB7E', sushi: '#FFC078',
 };
 
 export const GAMES = [sudokuDef, killerDef, nonogramDef, nonocolorDef, blocsDef, solitaireDef, spiderDef, g2048Def, matchDef, sumsDef, triDef, minesDef, scierieDef, sushiDef]

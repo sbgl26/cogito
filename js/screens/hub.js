@@ -5,7 +5,7 @@ import { saves, stats, settings, daily } from '../core/store.js';
 import { GAMES, dailyPick } from '../games/registry.js';
 import { fmt } from '../idle/hud.js';
 
-export const APP_VERSION = '0.3.1';
+export const APP_VERSION = '0.4.0';
 
 function tabbar(active) {
   const tab = (name, href, icn, label) => h('a', {
@@ -144,7 +144,8 @@ export function settingsScreen(root) {
       toggle('checkErrors', 'Signaler les erreurs', 'Une saisie fausse s’affiche en rouge tout de suite'),
       toggle('timer', 'Afficher le chronomètre'),
       toggle('autoNotes', 'Nettoyer les notes', 'Sudoku : retire les candidats devenus impossibles'),
-      toggle('autoCross', 'Finir les lignes', 'Nonogram et Sommes : marque le reste d’une ligne terminée')),
+      toggle('autoCross', 'Finir les lignes', 'Nonogram et Sommes : marque le reste d’une ligne terminée'),
+      toggle('fancy3d', 'Rendu 3D réaliste', 'Jeux de gestion : reflets, flou et ombres fines. À couper si l’appareil chauffe')),
     !standalone && h('p', { class: 'install' },
       'Pour installer l’app sur iPhone : ouvrez cette page dans Safari, touchez Partager, puis « Sur l’écran d’accueil ». Elle fonctionne ensuite sans réseau.'),
     h('p', { class: 'version' }, 'Cogito ' + APP_VERSION),

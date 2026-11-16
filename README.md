@@ -21,7 +21,9 @@ Une seule app, jouable hors connexion, sans dépendance ni étape de build
 Jeux de gestion (3D, sans fin, revenus même app fermée) : **Scierie** et **Sushi express**.
 Ils partagent `js/idle/kit.js` (scène Three.js, formes à facettes) et `js/idle/hud.js`
 (caisse, améliorations, revenus pendant l'absence) et `js/idle/icons.js` (icônes dessinées).
-Three.js est embarqué dans `vendor/`.
+Three.js et ses effets (occlusion ambiante, halo, profondeur de champ) sont embarqués dans
+`vendor/three.module.min.js`, assemblé avec esbuild depuis le paquet npm `three`. Le rendu
+s'allège tout seul sur un appareil lent ; le réglage « Rendu 3D réaliste » coupe les effets.
 
 Autour des jeux : défi du jour (même grille pour tout le monde, série de jours),
 statistiques, reprise automatique, thème clair / sombre, sons et vibrations.

@@ -37,6 +37,7 @@ const DEFAULTS = {
   autoNotes: true,      // Sudoku : retirer les notes devenues impossibles
   autoCross: true,      // Nonogram : barrer le reste d'une ligne terminée
   haptics: true,        // vibrations (Android ; iOS ne les expose pas au web)
+  fancy3d: true,        // jeux de gestion : effets de rendu (ombres fines, flou, reflets)
   sound: true,          // petits sons (pose, erreur, victoire)
 };
 

@@ -2,7 +2,7 @@
 // Jeu de gestion sans fin : chaque tronc livré rapporte des pièces à réinvestir.
 
 import { h } from '../../core/ui.js';
-import { createStage, patchyTexture, noise, group, at, turn, mesh, cyl, ball, rbox, disc, blob, tree, pine, rock, flower, person } from '../../idle/kit.js';
+import { createStage, patchyTexture, noise, group, at, turn, mesh, cyl, ball, rbox, disc, blob, tree, pine, rock, flower, person, grass } from '../../idle/kit.js';
 import { createIdle } from '../../idle/hud.js';
 import { ICONS } from '../../idle/icons.js';
 
@@ -51,8 +51,8 @@ function mount(host, state, api) {
 
   (async () => {
     stage = await createStage(wrap, {
-      ground: '#8CC63F', span: 15, lookZ: 0.7, repeat: 4,
-      floor: () => patchyTexture('#8CC63F', ['rgba(255,255,255,0.13)', 'rgba(40,120,20,0.16)', 'rgba(214,236,90,0.16)', 'rgba(60,140,30,0.12)']),
+      ground: '#6FAE31', span: 15, lookZ: 0.7, repeat: 4,
+      floor: () => patchyTexture('#6FAE31', ['rgba(255,255,255,0.10)', 'rgba(30,100,15,0.20)', 'rgba(190,220,70,0.14)', 'rgba(50,120,25,0.16)']),
     });
     if (dead) { if (stage) stage.dispose(); return; }
     if (!stage) { wrap.append(h('p', { class: 'idle-fail' }, 'Ce jeu a besoin de la 3D, indisponible sur cet appareil.')); return; }
@@ -86,7 +86,7 @@ function mount(host, state, api) {
       at(rbox(0.9, 0.22, 0.9, '#93402D', 0.06), 1.75, 4.6, -0.8)), MILL.x, 0, MILL.z - 2.2);
 
     // Établi de sciage : une grande lame qui tourne.
-    const blade = cyl(0.78, 0.78, 0.07, '#DDE2E8', 14, { flat: true, metal: 0.55, rough: 0.35 });
+    const blade = cyl(0.78, 0.78, 0.07, '#DDE2E8', 14, { flat: true, metal: 1, rough: 0.22, env: 1.3 });
     blade.rotation.z = Math.PI / 2;
     const spin = group(blade, turn(cyl(0.18, 0.18, 0.12, '#495057', 12), 0, 0, Math.PI / 2));
     add(group(at(rbox(2.0, 0.8, 1.35, '#E0A060', 0.1), 0, 0.4, 0), at(rbox(2.1, 0.12, 1.45, '#C98B4A', 0.05), 0, 0.84, 0), at(spin, 0, 1.0, 0)), -4.1, 0, MILL.z - 1.3);
@@ -101,8 +101,9 @@ function mount(host, state, api) {
     add(disc(1.25, 2.3, '#E3CE96'), MILL.x, 0.014, MILL.z + 1.1);
     add(disc(0.8, 0.6, '#E3CE96'), MILL.x + 0.5, 0.014, MILL.z + 3.3);
     add(disc(2.3, 1.55, '#D9E7A8'), -6.3, 0.014, -10.2);
-    add(disc(2.0, 1.3, '#4DABF7', 0.02, { rough: 0.15 }), -6.3, 0.016, -10.2);
-    add(disc(0.9, 0.5, '#8BCBFA', 0.03, { rough: 0.15 }), -6.7, 0.02, -10.5);
+    // Eau : surface lisse et vernie, qui reflète le ciel.
+    add(disc(2.0, 1.3, '#2F7FD6', 0.02, { rough: 0.03, coat: 1, env: 1.7, tex: null }), -6.3, 0.016, -10.2);
+    add(disc(1.2, 0.75, '#3F93E6', 0.03, { rough: 0.03, coat: 1, env: 1.7, tex: null }), -6.5, 0.02, -10.35);
     add(rock(0.5, 2), -4.4, 0.2, -9.4); add(rock(0.34, 3), -7.9, 0.14, -8.9); add(rock(0.45, 5), 6.6, 0.18, -5.6); add(rock(0.3, 7), -6.6, 0.12, 4.4);
     for (let k = 0; k < 9; k++) {
       const bush = group(at(blob(0.42, '#40C057', k), 0, 0.3, 0), at(blob(0.3, '#51CF66', k + 2), 0.34, 0.24, 0.1));
@@ -116,6 +117,15 @@ function mount(host, state, api) {
       g.rotation.y = k * 2.1;
       add(g, x, 0, z);
     });
+
+    // Herbe : des milliers de brins, sauf sous les bâtiments, la mare et le chemin.
+    const inEllipse = (x, z, cx, cz, rx, rz) => ((x - cx) / rx) ** 2 + ((z - cz) / rz) ** 2 < 1;
+    scene.add(grass({
+      keep: (x, z) => !(Math.abs(x) < 3.3 && z > MILL.z - 4.5 && z < MILL.z + 0.1)
+        && !(Math.abs(x + 4.1) < 1.3 && Math.abs(z - (MILL.z - 1.3)) < 1.0)
+        && !(Math.abs(x - 4.2) < 1.2 && z > MILL.z - 2.7 && z < MILL.z - 0.4)
+        && !inEllipse(x, z, -6.3, -10.2, 2.5, 1.75) && !inEllipse(x, z, MILL.x, MILL.z + 1.1, 1.35, 2.4),
+    }));
 
     // ----- Arbres à couper -----
     const forest = [];
@@ -135,7 +145,7 @@ function mount(host, state, api) {
       while (crew.length < workers(state)) {
         const k = crew.length;
         const body = person({ color: SHIRTS[k % SHIRTS.length], seed: k, hat: 'casque' });
-        const axe = group(at(cyl(0.035, 0.035, 0.62, '#D9965A', 8), 0, 0, 0), at(rbox(0.26, 0.2, 0.07, '#CED4DA', 0.03, { metal: 0.4, rough: 0.4 }), 0.1, 0.24, 0));
+        const axe = group(at(cyl(0.035, 0.035, 0.62, '#D9965A', 8), 0, 0, 0), at(rbox(0.26, 0.2, 0.07, '#CED4DA', 0.03, { metal: 1, rough: 0.3 }), 0.1, 0.24, 0));
         body.userData.armR.add(at(turn(axe, Math.PI / 2, 0, 0), 0, -0.45, 0.12));
         const log = logMesh(1.0, 0.16);
         log.visible = false;
